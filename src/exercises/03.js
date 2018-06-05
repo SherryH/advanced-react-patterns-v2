@@ -45,14 +45,32 @@ export const ToggleContext = React.createContext(
   {on: false, toggle: () => {}}, // default value
 )
 
+// Extra credit 1
+/* <ToggleConsumer>
+{({on}) => (on ? children : null)}
+</ToggleConsumer> */
+// throw error when there is no context passed thru, ie, the compound component is outside Toggle
+function ToggleConsumer(props) {
+  return (
+    <ToggleContext.Consumer {...props}>
+      {context => {
+        if (!context) {
+          throw Error('Must be used inside Toggle Provider')
+        }
+        return props.children(context)
+      }}
+    </ToggleContext.Consumer>
+  )
+}
+
 class Toggle extends React.Component {
   // 🐨 each of these compound components will need to be changed to use
   // ToggleContext.Consumer and rather than getting `on` and `toggle`
   // from props, it'll get it from the ToggleContext.Consumer value.
   static On = props => (
-    <ToggleContext.Consumer>
+    <ToggleConsumer>
       {({on}) => (on ? props.children : null)}
-    </ToggleContext.Consumer>
+    </ToggleConsumer>
   )
   static Off = props => (
     <ToggleContext.Consumer>
