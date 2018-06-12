@@ -6,6 +6,7 @@ import {Switch} from '../switch'
 // Check out the previous usage example. How would someone pass
 // a custom `onClick` handler? It'd be pretty tricky! It'd be
 // easier to just not use the `togglerProps` prop collection!
+// => because the supplied onClick would overwrite the onClick in togglerProps
 //
 // What if instead we exposed a function which merged props?
 // Let's do that instead. 🐨 Swap `togglerProps` with a `getTogglerProps`
@@ -14,6 +15,12 @@ import {Switch} from '../switch'
 //
 // 💰 Here's a little utility that might come in handy
 // const callAll = (...fns) => (...args) => fns.forEach(fn => fn && fn(...args))
+
+// callAll, takes in any number of fns, return a function that accepts any num of args
+// callAll can be used in onClick handler to take in onClick(), toggle()
+const callAll = (...fns) => (...args) => {
+  fns.forEach(fn => fn && fn(...args))
+}
 
 class Toggle extends React.Component {
   state = {on: false}
@@ -26,9 +33,15 @@ class Toggle extends React.Component {
     return {
       on: this.state.on,
       toggle: this.toggle,
-      togglerProps: {
-        'aria-pressed': this.state.on,
-        onClick: this.toggle,
+      getTogglerProps: ({onClick, style, ...props}) => {
+        // merge the newly passed-in props with the default ones
+        // abstract the onClick case (very common!) using callAll
+        return {
+          'aria-pressed': this.state.on,
+          onClick: callAll(onClick, this.toggle),
+          style: {...style, color: 'red'},
+          ...props,
+        }
       },
     }
   }
@@ -56,6 +69,7 @@ function Usage({
               onClick: onButtonClick,
               id: 'custom-button-id',
             })}
+            //onClick={onButtonClick} //this will overwrite default onClick behaviour
           >
             {on ? 'on' : 'off'}
           </button>
