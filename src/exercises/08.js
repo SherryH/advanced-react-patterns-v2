@@ -52,11 +52,43 @@ class Toggle extends React.Component {
     this.setState(this.initialState, () =>
       this.props.onReset(this.state.on),
     )
-  toggle = () =>
+  // this is too specific to the timesClicked usecase
+  // use the reducer pattern. that we change state according to the changes given
+  old_toggle = () => {
+    const toChange = this.props.toggleConstraint()
     this.setState(
+      ({on}) => {
+        if (toChange) return {on: !on}
+      },
+      () => this.props.onToggle(this.state.on),
+    )
+  }
+
+  // this function takes in the <Usage/> stateReducer() to determine to new state
+  // and then call setState() to update the <Toggle/> internal state
+  // updater is either the new stateChangedObj or a func returning changeObj
+  internalSetState = (updater, callback) => {
+    // get original <Toggle/> change
+    const changedObject =
+      typeof updater === 'function' ? updater(this.state) : updater
+    // get the reduced state change from <Usage/>
+    const newState = this.props.stateReducer(
+      this.state,
+      changedObject,
+    )
+    // return null if there are no changes to be made
+    const finalState =
+      Object.keys(newState).length === 0 ? null : newState
+    this.setState(finalState, callback)
+  }
+
+  toggle = () => {
+    this.internalSetState(
       ({on}) => ({on: !on}),
       () => this.props.onToggle(this.state.on),
     )
+  }
+
   getTogglerProps = ({onClick, ...props} = {}) => ({
     onClick: callAll(onClick, this.toggle),
     'aria-pressed': this.state.on,
@@ -95,6 +127,18 @@ class Usage extends React.Component {
     this.setState(this.initialState)
     this.props.onReset(...args)
   }
+  // Usage controls Toggle state {on, reset} with its {timesClicked} state
+  // when timesClicked >=4, make {on: false}
+  toggleConstraint = () => {
+    if (this.state.timesClicked >= 4) {
+      return false
+    }
+    return true
+  }
+  // we want to make toggleConstraint more flexible that it is able to change Toggle {state}
+  // toggleStateReducer input: (state, stateChange), output: (newState)
+  // <Toggle /> this.toggle() changes {on} onToggle.
+  // To preserve
   toggleStateReducer = (state, changes) => {
     if (this.state.timesClicked >= 4) {
       return {...changes, on: false}
@@ -105,6 +149,7 @@ class Usage extends React.Component {
     const {timesClicked} = this.state
     return (
       <Toggle
+        toggleConstraint={this.toggleConstraint}
         stateReducer={this.toggleStateReducer}
         onToggle={this.handleToggle}
         onReset={this.handleReset}
