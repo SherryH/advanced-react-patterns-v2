@@ -59,6 +59,9 @@ class Toggle extends React.Component {
 // Don't make changes to the Usage component. It's here to show you how your
 // component is intended to be used and is used in the tests.
 // You can make all the tests pass by updating the Toggle component.
+
+// onReset() is passed in <Toggle /> as a prop, it is the custom reset we add
+// the children get reset() from Toggle , reset() = setState(initial) + onReset()
 function Usage({
   initialOn = false,
   onToggle = (...args) => console.log('onToggle', ...args),
