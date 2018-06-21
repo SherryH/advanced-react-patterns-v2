@@ -14,13 +14,17 @@ class Toggle extends React.Component {
   }
   initialState = {on: this.props.initialOn}
   state = this.initialState
+  static stateChangeTypes = {
+    toggle: '__toggle_toggle__',
+    reset: '__toggle_reset__',
+  }
   internalSetState(changes, callback) {
     this.setState(state => {
       // handle function setState call
       const changesObject =
         typeof changes === 'function' ? changes(state) : changes
       // apply state reducer
-      const reducedChanges =
+      const {type: ignoredType, ...reducedChanges} =
         this.props.stateReducer(state, changesObject) || {}
       // 🐨  in addition to what we've done, let's pluck off the `type`
       // property and return an object only if the state changes
@@ -31,22 +35,25 @@ class Toggle extends React.Component {
         : null
     }, callback)
   }
-  reset = () =>
+  reset = ({type = Toggle.stateChangeTypes.reset}: {}) =>
     // 🐨 add a `type` string property to this call
-    this.internalSetState(this.initialState, () =>
+    this.internalSetState({...this.initialState, type}, () =>
       this.props.onReset(this.state.on),
     )
   // 🐨 accept a `type` property here and give it a default value
-  toggle = () =>
+  // the added type will be removed when reducing state
+  // default type will be called 'toggle'. give it a constant
+  //
+  toggle = ({type} = {type: Toggle.stateChangeTypes.toggle}) =>
     this.internalSetState(
       // pass the `type` string to this object
-      ({on}) => ({on: !on}),
+      ({on}) => ({on: !on, type}),
       () => this.props.onToggle(this.state.on),
     )
   getTogglerProps = ({onClick, ...props} = {}) => ({
     // 🐨 change `this.toggle` to `() => this.toggle()`
     // to avoid passing the click event to this.toggle.
-    onClick: callAll(onClick, this.toggle),
+    onClick: callAll(onClick, () => this.toggle()),
     'aria-pressed': this.state.on,
     ...props,
   })
@@ -85,6 +92,7 @@ class Usage extends React.Component {
   }
   toggleStateReducer = (state, changes) => {
     if (changes.type === 'forced') {
+      // this added type will be removed when reducing state
       return changes
     }
     if (this.state.timesClicked >= 4) {
