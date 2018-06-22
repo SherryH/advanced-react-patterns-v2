@@ -7,6 +7,19 @@ import {Switch} from '../switch'
 // can learn the control props pattern in isolation from everything else.
 // Next you'll put the pieces together.
 
+// make functional helpers
+const Right = x => ({
+  map: f => Right(f(x)),
+  fold: (f, g) => g(x),
+  inspect: () => 'Right(${x})',
+})
+
+const Left = x => ({
+  map: f => Left(x),
+  fold: (f, g) => f(x),
+  inspect: () => 'Left(${x})',
+})
+
 class Toggle extends React.Component {
   state = {on: false}
   // 🐨 let's add a function that can determine whether
@@ -15,25 +28,57 @@ class Toggle extends React.Component {
   // true if that prop is controlled
   // 💰 this.props[prop] !== undefined
   //
+  isControlled = prop => {
+    return this.props[prop] != null
+  }
+
+  ifIsControlled = prop => {
+    return this.isControlled(prop) ? Right(prop) : Left(prop)
+  }
   // 🐨 Now let's add a function that can return the state
   // whether it's coming from this.state or this.props
   // Call it `getState` and have it return on from
   // state if it's not controlled or props if it is.
+  getState = () => {
+    return {
+      on: this.isControlled('on') ? this.props.on : this.state.on,
+    }
+  }
+
   toggle = () => {
     // 🐨 if the toggle is controlled, then we shouldn't
     // be updating state. Instead we should just call
     // `this.props.onToggle` with what the state should be
-    this.setState(
-      ({on}) => ({on: !on}),
+    const {on} = this.getState()
+    // remove if/else block with functional programming
+    this.ifIsControlled('on').fold(
       () => {
-        this.props.onToggle(this.state.on)
+        this.setState(
+          ({on}) => ({on: !on}),
+          () => {
+            // 'on' here is still the prevState as it was from getState() b4 setState() called
+            this.props.onToggle(!on)
+          },
+        )
       },
+      () => this.props.onToggle(!on),
     )
+    // if (this.isControlled('on')) {
+    //   this.props.onToggle(!this.props.on)
+    // } else {
+    //   this.setState(
+    //     ({on}) => ({on: !on}),
+    //     () => {
+    //       this.props.onToggle(on)
+    //     },
+    //   )
+    // }
   }
   render() {
     // 🐨 rather than getting state from this.state,
     // let's use our `getState` method.
-    const {on} = this.state
+    const {on} = this.getState()
+    console.log('getState', on)
     return <Switch on={on} onClick={this.toggle} />
   }
 }
