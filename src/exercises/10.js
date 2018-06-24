@@ -78,7 +78,6 @@ class Toggle extends React.Component {
     // 🐨 rather than getting state from this.state,
     // let's use our `getState` method.
     const {on} = this.getState()
-    console.log('getState', on)
     return <Switch on={on} onClick={this.toggle} />
   }
 }
