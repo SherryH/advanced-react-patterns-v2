@@ -40,9 +40,30 @@ class Toggle extends React.Component {
   // Call it `getState` and have it return on from
   // state if it's not controlled or props if it is.
   getState = () => {
-    return {
-      on: this.isControlled('on') ? this.props.on : this.state.on,
-    }
+    // this only returns the 'on' state. we want to make apply to all states
+    // return {
+    //   on: this.isControlled('on') ? this.props.on : this.state.on,
+    // }
+    // loop thru all states,
+    // if prop provided, use prop, else use state
+    // output: object, the corresponding val is from prop if presend
+    // Object.entries(this.state) => [[k1:v1],[k2,v2]..]
+    return Object.entries(this.state).reduce((pre, [key, value]) => {
+      // if (this.isControlled(key)) {
+      //   pre[key] = this.props[key]
+      // } else {
+      //   pre[key] = value
+      // }
+      this.ifIsControlled(key).fold(
+        () => {
+          pre[key] = value
+        },
+        () => {
+          pre[key] = this.props[key]
+        },
+      )
+      return pre
+    }, {})
   }
 
   toggle = () => {
